@@ -1,0 +1,239 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_SQL_URL")
+}
+
+// User
+model User {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  photo     String
+  createdAt DateTime @default(now())
+
+  googleUserId String?     @unique
+  googleUser   GoogleUser? @relation(fields: [googleUserId], references: [id])
+
+  languageId String          @default("en")
+  language   LanguageOption? @relation(fields: [languageId], references: [id])
+
+  userAnswers UserAnswers?
+
+  courses Course[]
+}
+
+model GoogleUser {
+  id        String   @id @default(uuid())
+  googleId  String   @unique
+  createdAt DateTime @default(now())
+
+  user User?
+}
+
+model UserAnswers {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  goalOptionId String?
+  goalOption   GoalOption? @relation(fields: [goalOptionId], references: [id])
+
+  roleOptions RoleOption[]
+
+  jobOptionId String?
+  jobOption   JobOption? @relation(fields: [jobOptionId], references: [id])
+
+  educationOptionId String?
+  educationOption   EducationOption? @relation(fields: [educationOptionId], references: [id])
+}
+
+// Language
+model LanguageOption {
+  id    String @id @default(uuid())
+  value String @unique
+
+  user User[]
+
+  languageLabel          LanguageLabel[] @relation("languageLabel")
+  languageLabelLanguajes LanguageLabel[] @relation("languageLabelLanguajes")
+
+  goalLabel      GoalLabel[]
+  roleLabel      RoleLabel[]
+  jobLabel       JobLabel[]
+  educationLabel EducationLabel[]
+
+  courseDetails   CourseDetails[]
+  courseTagLabel  CourseTagLabel[]
+  courseTagCustom CourseTagCustom[]
+}
+
+model LanguageLabel {
+  id    String @id @default(uuid())
+  label String
+
+  languageOptionId String
+  languageOption   LanguageOption @relation("languageLabel", fields: [languageOptionId], references: [id])
+
+  languageId String
+  language   LanguageOption @relation("languageLabelLanguajes", fields: [languageId], references: [id])
+
+  @@unique([languageOptionId, languageId])
+}
+
+// Goal
+model GoalOption {
+  id    String @id @default(uuid())
+  src   String
+  value String @unique
+
+  userAnswers UserAnswers[]
+  labels      GoalLabel[]
+}
+
+model GoalLabel {
+  id    String @id @default(uuid())
+  label String
+
+  goalOptionId String
+  goalOption   GoalOption @relation(fields: [goalOptionId], references: [id])
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+
+  @@unique([goalOptionId, languageId])
+}
+
+// Role 
+model RoleOption {
+  id    String @id @default(uuid())
+  value String @unique
+
+  userAnswers UserAnswers[]
+  labels      RoleLabel[]
+}
+
+model RoleLabel {
+  id    String @id @default(uuid())
+  label String
+
+  roleOptionId String
+  roleOption   RoleOption @relation(fields: [roleOptionId], references: [id])
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+
+  @@unique([roleOptionId, languageId])
+}
+
+// Job
+model JobOption {
+  id    String @id @default(uuid())
+  value String @unique
+
+  userAnswers UserAnswers[]
+  labels      JobLabel[]
+}
+
+model JobLabel {
+  id    String @id @default(uuid())
+  label String
+
+  jobOptionId String
+  jobOption   JobOption @relation(fields: [jobOptionId], references: [id])
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+
+  @@unique([jobOptionId, languageId])
+}
+
+// Education
+model EducationOption {
+  id    String @id @default(uuid())
+  value String @unique
+
+  userAnswers UserAnswers[]
+  labels      EducationLabel[]
+}
+
+model EducationLabel {
+  id    String @id @default(uuid())
+  label String
+
+  educationOptionId String
+  educationOption   EducationOption @relation(fields: [educationOptionId], references: [id])
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+
+  @@unique([educationOptionId, languageId])
+}
+
+// Course
+model Course {
+  id            String          @id @default(uuid())
+  createdById   String
+  createdBy     User            @relation(fields: [createdById], references: [id])
+  createdAt     DateTime        @default(now())
+  courseDetails CourseDetails[]
+  active        Boolean
+}
+
+model CourseDetails {
+  id               String            @id @default(uuid())
+  title            String
+  description      String
+  time             String?
+  courseTags       CourseTag[]
+  courseTagsCustom CourseTagCustom[]
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, languageId])
+}
+
+model CourseTag {
+  id    String @id @default(uuid())
+  value String @unique
+
+  courseDetails CourseDetails[]
+  labels        CourseTagLabel[]
+}
+
+model CourseTagLabel {
+  id    String @id @default(uuid())
+  label String
+
+  courseTagId String
+  courseTag   CourseTag @relation(fields: [courseTagId], references: [id])
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+
+  @@unique([courseTagId, languageId])
+}
+
+model CourseTagCustom {
+  id    String @id @default(uuid())
+  label String
+
+  courseDetails CourseDetails[]
+
+  languageId String
+  language   LanguageOption @relation(fields: [languageId], references: [id])
+}
